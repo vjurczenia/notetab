@@ -54,7 +54,8 @@
   <script src="https://unpkg.com/monaco-editor@0.39.0/min/vs/loader.js"></script>
   <script>
     // Get local storage key
-    const noteKey = window.location.search.substring(1) || "notetab";
+    const defaultNoteKey = "notetab";
+    const noteKey = window.location.search.substring(1) || defaultNoteKey;
     document.title = noteKey;
 
     // Render markdown
@@ -78,6 +79,28 @@
       const raw = markedWithHighlight.parse(markdown);
       const clean = DOMPurify.sanitize(raw, { USE_PROFILES: { html: true } });
       elPreview.innerHTML = clean;
+    }
+
+    // Display README on first use
+    if (noteKey == defaultNoteKey && localStorage.getItem(noteKey) === null) {
+      let readme = '';
+
+      fetch('https://raw.githubusercontent.com/vjurczenia/notetab/refs/heads/main/README.md')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error();
+          }
+          return response.text();
+        })
+        .then(text => {
+          readme = text;
+        })
+        .catch(() => {
+          readme = '';
+        })
+        .finally(() => {
+          localStorage.setItem(noteKey, readme);
+        });
     }
 
     if (localStorage.getItem(noteKey)) renderMarkdown(localStorage.getItem(noteKey));
